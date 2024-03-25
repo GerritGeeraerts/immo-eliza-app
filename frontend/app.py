@@ -53,7 +53,7 @@ state_of_building = st.selectbox(
 )
 postal_code = st.selectbox(
     'Postal Code',
-    options=[1000, 9000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000],
+    options=[1000, 9000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 9451],
     index=0
 )
 

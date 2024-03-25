@@ -62,7 +62,7 @@ class PropertySchemaIn(BaseModel):
         description="The state of the building.",
         alias="State of Building",
     )
-    postal_code: Literal[1000, 9000, 2000, 3000, 4000, 5000, 6000, 7000, 9000] = Field(
+    postal_code: Literal[1000, 9000, 2000, 3000, 4000, 5000, 6000, 7000, 9000, 9451] = Field(
         default='1000',
         description="The postal code of the house.",
         alias="Postal Code",
