@@ -7,7 +7,7 @@ class ValueSchemaOut(BaseModel):
         description="The numerical value to be rounded and output."
     )
     unit: str = Field(
-        default="EUR",
+        default="€",
         description="The unit of measurement for the value, defaulting to 'EUR'."
     )
 
@@ -17,4 +17,4 @@ class ValueSchemaOut(BaseModel):
         """
         Round the value to the nearest thousand.
         """
-        return int(round(value, -3))
+        return int(round(value))

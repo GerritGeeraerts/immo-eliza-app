@@ -22,9 +22,7 @@ def redirect():
     response = RedirectResponse(url='/docs/')
     return response
 
-# 'Bathroom Count', 'Bedroom Count', 'Habitable Surface', 'Land Surface', 'Consumption', 'Postal Code',
-#     'Facades', 'Subtype', 'Toilet Count', 'Kitchen Type', 'State of Building',  # 'Sea view', 'Swimming Pool',
-#     'Price', 'Longitude', 'Latitude', 'EPC',
+
 @app.post('/property-value-inference/', response_model=ValueSchemaOut)
 async def property_value_inference(property_: PropertySchemaIn):
     # Your price inference logic here
@@ -34,25 +32,21 @@ async def property_value_inference(property_: PropertySchemaIn):
     property_dict['Latitude'] = np.nan
     property_dict = [property_dict]
     df = pd.DataFrame(property_dict)
-    print(df)
-    log_pipe = Pipeline([
-        ('Log Scale',
-         Log10Transformer(columns=['Bathroom Count', 'Bedroom Count', 'Habitable Surface', 'Land Surface'])),
-    ])
+    df['Price'] = 0
 
-    df = log_pipe.fit_transform(df)
+    base_pipeline = load_model_from_pickle('./models/base_pipeline.pkl')
+    df = base_pipeline.transform(df)
+    df.drop(columns=['Price'], inplace=True)
 
-
-    # base_pipeline = load_model_from_pickle('./models/base_pipeline.pkl')
-    after_split_pipeline = load_model_from_pickle('./models/after_split_pipeline.pkl')
+    after_split_pipeline = load_model_from_pickle('./models/base_after_split_pipeline.pkl')
     df = after_split_pipeline.transform(df)
+
     df = df.reindex(columns=['Bathroom Count', 'Bedroom Count', 'Habitable Surface', 'Land Surface',
                              'Consumption', 'Postal Code', 'Facades', 'Subtype', 'Toilet Count',
                              'Kitchen Type', 'State of Building', 'Longitude', 'Latitude'])
 
     # after_split_pipeline = load_model_from_pickle('./models/after_split_pipeline.pkl')
-    linear_regression = load_model_from_pickle('./models/linearregression_log10.pkl')
-    result = linear_regression.predict(df)
+    random_forest_model = load_model_from_pickle('./models/random_forest.pkl')
+    result = random_forest_model.predict(df)
     print(result)
-    return {"value": 10**result[0]}
-
+    return {"value": 10 ** result[0]}

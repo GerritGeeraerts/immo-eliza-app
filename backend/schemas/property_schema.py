@@ -1,5 +1,7 @@
 from typing import Literal
-from pydantic import BaseModel, Field, conint, ConfigDict
+from pydantic import BaseModel, Field, conint, ConfigDict, field_validator
+
+from config import POSTAL_CODES
 
 
 class PropertySchemaIn(BaseModel):
@@ -62,8 +64,15 @@ class PropertySchemaIn(BaseModel):
         description="The state of the building.",
         alias="State of Building",
     )
-    postal_code: Literal[1000, 9000, 2000, 3000, 4000, 5000, 6000, 7000, 9000, 9451] = Field(
+    postal_code: int = Field(
         default='1000',
         description="The postal code of the house.",
         alias="Postal Code",
     )
+
+    @field_validator('postal_code')
+    @classmethod
+    def check_postal_code(cls, v):
+        if v not in POSTAL_CODES:
+            raise ValueError(f"{v} is not an allowed postal code, it has to be one of {POSTAL_CODES}")
+        return v

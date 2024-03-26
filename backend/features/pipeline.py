@@ -1,7 +1,8 @@
 from sklearn.pipeline import Pipeline
 
 from features.transformers import RowFilter, DropNARows, ColumnSelector, ResetIndexTransformer, \
-    FillLandSurfaceForApartment, FacadeFixer, ConsumptionFixer, MyOrdinalEncoder, MyMinMaxScaler, MyKNNImputer
+    FillLandSurfaceForApartment, FacadeFixer, ConsumptionFixer, MyOrdinalEncoder, MyMinMaxScaler, MyKNNImputer, \
+    Log10Transformer
 
 BASE_SUBTYPES_TO_KEEP = ['VILLA', 'HOUSE', 'APARTMENT', ]
 BASE_COLUMNS_TO_KEEP = [
@@ -23,6 +24,7 @@ def subtype_condition(df):
 def sale_type_condition(df):
     """Filter the dataframe based on the sale type column"""
     return df['Sale Type'] == 'NORMAL_SALE'
+
 
 kithcen_map = {
     "INSTALLED": 1,
@@ -48,7 +50,7 @@ subtype_map = {
     'APARTMENT': 1,
 }
 
-base_pipeline = Pipeline([
+pre_pipeline = Pipeline([
     ('Fix Facades < 1 and > 4', FacadeFixer()),
     ('row_filter', RowFilter(condition=subtype_condition)),
     ('row_filter', RowFilter(condition=sale_type_condition)),
@@ -59,6 +61,10 @@ base_pipeline = Pipeline([
     ('Drop EPC', ColumnSelector(drop_columns=['EPC'])),
 ])
 
+base_pipeline = Pipeline([
+    ('Log Scale',
+     Log10Transformer(columns=['Bathroom Count', 'Bedroom Count', 'Habitable Surface', 'Land Surface', 'Price'])),
+])
 
 base_after_split_pipeline = Pipeline([
     ('Fill Land Surface for APARTMENT', FillLandSurfaceForApartment()),
@@ -68,7 +74,7 @@ base_after_split_pipeline = Pipeline([
     ('Min Max scaler', MyMinMaxScaler(
         columns=['Land Surface', 'Habitable Surface', 'Bathroom Count', 'Toilet Count', 'Postal Code', 'Longitude',
                  'Latitude', 'Facades', 'Subtype', 'Consumption', 'State of Building', 'Kitchen Type', ],
-                 # 'cd_munty_refnis', 'PopDensity', 'MedianPropertyValue', 'NetIncomePerResident'],
+        # 'cd_munty_refnis', 'PopDensity', 'MedianPropertyValue', 'NetIncomePerResident'],
         multipliers={'Subtype': 100}  # make Subtype dominant for KNN
     )),
     ('KNN Toilets', MyKNNImputer(columns=['Habitable Surface', 'Bathroom Count', 'Toilet Count', 'Subtype'])),
