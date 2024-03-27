@@ -1,11 +1,14 @@
 import os.path
-from pprint import pprint
 
+import numpy as np
 import streamlit as st
 import requests
+from streamlit.logger import get_logger
 
 from config import POSTAL_CODES
-from utils import get_epc_label
+from utils import get_epc_label, get_coordinates
+
+logger = get_logger(__name__)
 
 subtype_options = {
     '🏠 House': 'HOUSE',
@@ -35,12 +38,15 @@ kitchen_options = {
 }
 
 
-# st.session_state.subtype = 'HOUSE'
+
 def predict_price(data):
-    print('Predicting price...')
-    url = 'http://127.0.0.1:8000/property-value-inference/'
+    backend_url = os.getenv('BACKEND_URL')
+    base_url = backend_url if backend_url else 'http://127.0.0.1:8000'
+    url = f"{base_url}/property-value-inference/"
+    logger.debug(f"Sending request to {url} with data: {data}")
     response = requests.post(url, json=data)
     if response.status_code == 200:
+        logger.debug(f"Response: {response.json()}")
         return response.json()
     else:
         st.error("Failed to get the prediction. Please check the API and try again.")
@@ -59,27 +65,35 @@ def recalculate_prediction():
         "Consumption": st.session_state.get("Consumption"),
         "Kitchen Type": kitchen_options[st.session_state.get("Kitchen Type", 'Equipped')],
         "State of Building": state_of_building_options[st.session_state.get("State of Building", 'New')],
-        "Postal Code": POSTAL_CODES[st.session_state.get("Postal Code", "1000 - Brussel")]
+        "Postal Code": POSTAL_CODES[st.session_state.get("Postal Code", "1000 - Brussel")],
+        "Latitude": st.session_state.get("Latitude") if st.session_state.get("Latitude") else None,
+        "Longitude": st.session_state.get("Longitude") if st.session_state.get("Longitude") else None,
     }
     prediction = predict_price(data)
     if prediction:
         st.session_state['price'] = price = prediction.get('value')
         st.session_state['unit'] = unit = prediction.get('unit')
-        st.session_state[
-            'output'] = f"The predicted price of the house is:\n# {unit} {f'{price:,.0f}'.replace(',', '.')},-"
+        output = f"The predicted price of the house is:\n# {unit} {f'{price:,.0f}'.replace(',', '.')},-"
+        logger.info(output)
+        st.session_state['output'] = output
 
+def get_coordinates_for_adress():
+    number = st.session_state.get("Street Number")
+    street = st.session_state.get("Street Name")
+    postalcode = POSTAL_CODES[st.session_state.get("Postal Code", "1000 - Brussel")]
+    lat, lon = get_coordinates(number, street, postalcode)
+    st.session_state['Latitude'] = lat
+    st.session_state['Longitude'] = lon
+    logger.info(f"Latitude: {lat}, Longitude: {lon}")
+    recalculate_prediction()
 
 title = st.sidebar.title('Prediction')
-
 st.sidebar.success(f"{st.session_state['output'] if 'output' in st.session_state else 'Move a slider to predict'}")
-
 st.image(os.path.join('images', 'house.png'), use_column_width='always')
 
-# Streamlit app layout
 st.title('🇧🇪 Belgian House Price Prediction')
 
 st.subheader('Housing Type')
-
 st.selectbox(
     'Subtype',
     key='Subtype',
@@ -93,6 +107,7 @@ st.slider(
     min_value=2, max_value=4, value=4, step=1,
     on_change=recalculate_prediction
 )
+
 st.subheader('Surface')
 st.slider(
     'Habitable Surface',
@@ -109,6 +124,7 @@ if subtype_options[st.session_state.get('Subtype')] != 'APARTMENT':  # Check if 
     )
 else:
     st.session_state['Land Surface'] = 0
+
 st.subheader('Rooms')
 bedroom_count = st.slider(
     'Bedroom Count',
@@ -128,8 +144,8 @@ toilet_count = st.slider(
     min_value=0, max_value=10, value=2, step=1,
     on_change=recalculate_prediction,
 )
-st.subheader('State of the House')
 
+st.subheader('State of the House')
 state_of_building = st.selectbox(
     'State of Building',
     key="State of Building",
@@ -163,6 +179,19 @@ postal_code = st.selectbox(
     index=0,
     on_change=recalculate_prediction,
 )
+latitude = st.number_input(
+    'Latitude',
+    key="Latitude",
+    on_change=recalculate_prediction,
+)
+longitude = st.number_input(
+    'Longitude',
+    key="Longitude",
+    on_change=recalculate_prediction,
+)
+st.subheader('Calculate Latitude and Longitude for Address')
+st.text('Enter the address details below to get the latitude and longitude.\n'
+        'This will help to get the region price per square meter.')
 street_name = st.text_input(
     'Street Name',
     'Rue de la Loi',
@@ -173,6 +202,8 @@ street_number = st.number_input(
     1,
     key="Street Number",
 )
+# button to get the lat and long for adress
+st.button('Get Latitude and Longitude', on_click=get_coordinates_for_adress)
 st.text(
     "The model is predicting listing price as it is trained on listing prices.\n"
     "The model is trained on Belgian real estate data.\n"

@@ -1,4 +1,6 @@
 from typing import Literal
+
+import numpy as np
 from pydantic import BaseModel, Field, conint, ConfigDict, field_validator
 
 from config import POSTAL_CODES
@@ -69,7 +71,16 @@ class PropertySchemaIn(BaseModel):
         description="The postal code of the house.",
         alias="Postal Code",
     )
-
+    longitude: float = Field(
+        default=0,
+        description="The longitude of the house.",
+        alias="Longitude",
+    )
+    latitude: float = Field(
+        default=0,
+        description="The latitude of the house.",
+        alias="Latitude",
+    )
     @field_validator('postal_code')
     @classmethod
     def check_postal_code(cls, v):

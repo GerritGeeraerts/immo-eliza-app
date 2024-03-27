@@ -1,5 +1,6 @@
 from sklearn.pipeline import Pipeline
 
+from features.build_features import AddAvgRegionPrice
 from features.transformers import RowFilter, DropNARows, ColumnSelector, ResetIndexTransformer, \
     FillLandSurfaceForApartment, FacadeFixer, ConsumptionFixer, MyOrdinalEncoder, MyMinMaxScaler, MyKNNImputer, \
     Log10Transformer
@@ -59,6 +60,8 @@ pre_pipeline = Pipeline([
     ('ColumnSelector', ColumnSelector(keep_columns=BASE_COLUMNS_TO_KEEP)),
     ('Consumption fixer', ConsumptionFixer()),
     ('Drop EPC', ColumnSelector(drop_columns=['EPC'])),
+    ('Fill Land Surface for APARTMENT', FillLandSurfaceForApartment()),
+    ('Reset Index', ResetIndexTransformer()),
 ])
 
 base_pipeline = Pipeline([
@@ -66,8 +69,13 @@ base_pipeline = Pipeline([
      Log10Transformer(columns=['Bathroom Count', 'Bedroom Count', 'Habitable Surface', 'Land Surface', 'Price'])),
 ])
 
+base_after_split_pipeline_for_cat_boost = Pipeline([
+    ('Min Max scaler', MyMinMaxScaler(columns=['Postal Code', 'Longitude', 'Latitude',])),
+    ('KNN Lon, Lat', MyKNNImputer(columns=['Postal Code', 'Longitude', 'Latitude'])),
+    ('Add RegionPricePerSqm', AddAvgRegionPrice(neighbors=25))
+])
+
 base_after_split_pipeline = Pipeline([
-    ('Fill Land Surface for APARTMENT', FillLandSurfaceForApartment()),
     ('Kitchen Type to Numeric', MyOrdinalEncoder('Kitchen Type', kithcen_map)),
     ('State of Building to Numeric', MyOrdinalEncoder('State of Building', building_state_map)),
     ('Subtype to numeric', MyOrdinalEncoder('Subtype', subtype_map)),
@@ -75,7 +83,7 @@ base_after_split_pipeline = Pipeline([
         columns=['Land Surface', 'Habitable Surface', 'Bathroom Count', 'Toilet Count', 'Postal Code', 'Longitude',
                  'Latitude', 'Facades', 'Subtype', 'Consumption', 'State of Building', 'Kitchen Type', ],
         # 'cd_munty_refnis', 'PopDensity', 'MedianPropertyValue', 'NetIncomePerResident'],
-        multipliers={'Subtype': 100}  # make Subtype dominant for KNN
+        #multipliers={'Subtype': 100}  # make Subtype dominant for KNN
     )),
     ('KNN Toilets', MyKNNImputer(columns=['Habitable Surface', 'Bathroom Count', 'Toilet Count', 'Subtype'])),
     ('KNN Lon, Lat', MyKNNImputer(columns=['Postal Code', 'Longitude', 'Latitude'])),
