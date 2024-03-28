@@ -41,7 +41,7 @@ kitchen_options = {
 
 def predict_price(data):
     backend_url = os.getenv('BACKEND_URL')
-    base_url = backend_url if backend_url else 'http://127.0.0.1:8000'
+    base_url = backend_url if backend_url else 'http://0.0.0.0:8000'
     url = f"{base_url}/property-value-inference/"
     logger.debug(f"Sending request to {url} with data: {data}")
     response = requests.post(url, json=data)
