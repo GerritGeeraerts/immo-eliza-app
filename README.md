@@ -41,6 +41,7 @@ deploy the model with FastAPI and Streamlit. FastAPI for other developers to use
 └── requirements.txt
 ```
 ## Online Live Demo!
+It is a bit slow because it is hosted on a free server, but it works! Please be patient.
 * [Immo Prediction Frontend with Streamlit](https://immo-eliza-streamlit.onrender.com)
 * [Immo Prediction Backend with FastAPI](https://immo-eliza-app.onrender.com/)
 
