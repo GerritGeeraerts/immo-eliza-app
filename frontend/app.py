@@ -115,6 +115,9 @@ title = st.sidebar.title('Prediction')
 st.sidebar.success(prediction_msg)
 st.image(os.path.join('images', 'house.png'), use_column_width='always')
 st.title('🇧🇪 Belgian House Price Prediction')
+st.text('It is a bit ⌛ slow since its on a free hosting service. Please be patient.')
+st.markdown('You can find the source code of the app on [github app](https://github.com/GerritGeeraerts/immo-eliza-app)'
+            ', [github model](https://github.com/GerritGeeraerts/immo-eliza-ml)')
 
 # Address
 st.subheader('Address')
